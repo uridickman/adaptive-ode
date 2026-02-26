@@ -22,5 +22,5 @@ def construct_interpolating_poly():
 
 
 @jit(nopython=True,cache=True)
-def functional_newton(max_iter=4):
+def functional_newton_iteration(max_iter=4):
     raise RuntimeError

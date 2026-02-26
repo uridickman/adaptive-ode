@@ -1,7 +1,7 @@
 from ..solver import ODESolver
 import numpy as np
 
-y0 = [10,10]
+y0 = np.array([10,10])
 trange = (0,100)
 
 def f(t,y):

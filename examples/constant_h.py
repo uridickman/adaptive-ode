@@ -1,7 +1,7 @@
 from ..solver import ODESolver
 import numpy as np
 
-y0 = [1,2]
+y0 = np.array([1,2])
 trange = (0,1)
 h = 0.01
 

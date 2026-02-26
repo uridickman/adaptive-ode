@@ -9,6 +9,7 @@ class ODESolver:
             f           : Callable,
             y0          : np.ndarray,
             trange      : Tuple[float,float],
+            y_at        : np.ndarray=None,
             rtol        : float=1e-3,
             h           : float=-1
         ):
@@ -19,6 +20,7 @@ class ODESolver:
         self.use_adaptive_h = h < 0
         self.h = 0.1 if self.use_adaptive_h else h
         self.rtol = rtol
+        self.y_at = np.sort(y_at)
 
         self.f = f
         self.H = [self.h]
@@ -29,14 +31,14 @@ class ODESolver:
 
     def solve(self):
         # Solve ODE here
-        t = self.tmin
         while t < self.tmax:
-            self.h = self.compute_step_size
-            ypred = self.predict()
-            ycorrect = self.correct(ypred)
+            t = self.T[-1]
+            if self.use_adaptive_h:
+                self.h = self.compute_step_size()
+                self.H.append(self.h)
             t += self.h
-
-        self.T.append(self.T[-1] + self.h)
+            self.T.append(t)
+        
 
     def predict(self):
         pass
