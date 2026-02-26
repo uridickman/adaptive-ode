@@ -38,6 +38,8 @@ class ODESolver:
                 self.H.append(self.h)
             t += self.h
             self.T.append(t)
+            
+        self.Y = np.array(self.solution_list)
         
 
     def predict(self):
