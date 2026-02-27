@@ -31,34 +31,16 @@ def interpolate(
     n = len(x_data)
     coeffs = newton_coeffs(x_data,y_data,order=n)
 
-    out = coeffs[0]
-    mult_x = 1.0
+    out    = np.zeros(len(x_query), dtype=np.float64)
+    mult_x = np.ones(len(x_query),  dtype=np.float64)
+    out[:] = coeffs[0]
 
     for k in range(1, n):
-        mult_x *= (x_query - x_data[k - 1])
-        out += coeffs[k] * mult_x
+        mult_x = mult_x * (x_query - x_data[k - 1])
+        out = out + coeffs[k] * mult_x
 
     return out
 
-
-@jit(nopython=True,cache=True)
-def interpolate_sym(
-        xsym        :sp.Symbol,
-        x_data      :np.ndarray,
-        y_data      :np.ndarray
-    )               -> np.ndarray:
-    
-    n = len(x_data)
-    coeffs = newton_coeffs(x_data,y_data,order=n)
-
-    poly = coeffs[0]
-    mult_x = 1.0
-
-    for k in range(1, n):
-        mult_x *= (xsym - x_data[k - 1])
-        poly += coeffs[k] * mult_x
-
-    return poly
 
 @jit(nopython=True,cache=True)
 def functional_newton_iteration(max_iter=4):

@@ -64,9 +64,29 @@ class ODESolver:
         return ynm1 + hn * fnm1 \
                 + (fnm1 - fnm2) / hnm1 * hn*hn / 2
 
+
+    def interpolate_sym(
+            self,
+            xsym        :sp.Symbol,
+            x_data      :np.ndarray,
+            y_data      :np.ndarray
+        )               -> np.ndarray:
+        
+        n = len(x_data)
+        coeffs = newton_coeffs(x_data,y_data,order=n)
+
+        out    = coeffs[0]
+        mult_x = 1
+
+        for k in range(1, n):
+            mult_x = mult_x * (xsym - x_data[k - 1])
+            out = out + coeffs[k] * mult_x
+
+        return out
+
     def integral_interpolant(self,xquery,x,y):
         xsym = sp.Symbol('x')
-        poly_np = interpolate_sym(xsym,x,y)
+        poly_np = self.interpolate_sym(xsym,x,y)
         poly_int = sp.integrate(poly_np)
         poly_int_np = sp.lambdify(xsym, poly_int, modules="numpy")
         return poly_int_np(xquery)
