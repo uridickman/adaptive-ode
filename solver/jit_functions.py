@@ -4,7 +4,11 @@ import sympy as sp
 
 
 @jit(nopython=True,cache=True)
-def newton_coeffs(x:np.ndarray,y:np.ndarray,order:int) -> np.ndarray:
+def newton_coeffs(
+        x           :np.ndarray,
+        y           :np.ndarray,
+        order       :int
+    )               -> np.ndarray:
     n = len(y)
     levels = order
     dd = np.zeros((n, levels), dtype=float)
@@ -18,7 +22,12 @@ def newton_coeffs(x:np.ndarray,y:np.ndarray,order:int) -> np.ndarray:
 
 
 @jit(nopython=True,cache=True)
-def interpolate(x_data:np.ndarray,y_data:np.ndarray,x_query:np.ndarray) -> np.ndarray:
+def interpolate(
+        x_data      :np.ndarray,
+        y_data      :np.ndarray,
+        x_query     :np.ndarray
+    )               -> np.ndarray:
+
     n = len(x_data)
     coeffs = newton_coeffs(x_data,y_data,order=n)
 
@@ -33,7 +42,12 @@ def interpolate(x_data:np.ndarray,y_data:np.ndarray,x_query:np.ndarray) -> np.nd
 
 
 @jit(nopython=True,cache=True)
-def interpolate_sym(xsym:sp.Symbol,x_data:np.ndarray,y_data:np.ndarray) -> np.ndarray:
+def interpolate_sym(
+        xsym        :sp.Symbol,
+        x_data      :np.ndarray,
+        y_data      :np.ndarray
+    )               -> np.ndarray:
+    
     n = len(x_data)
     coeffs = newton_coeffs(x_data,y_data,order=n)
 
