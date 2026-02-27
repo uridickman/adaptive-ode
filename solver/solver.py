@@ -1,5 +1,5 @@
 import numpy as np
-from jit_functions import *
+from .jit_functions import *
 from typing import Tuple,Callable
 from warnings import warn
 
