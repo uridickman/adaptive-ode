@@ -51,8 +51,25 @@ class ODESolver:
     def adams_moulton_step(self):
         pass
 
-    def adams_bashforth_step(self):
-        pass
+    def adams_bashforth_step(self,i):
+        ynm1 = self.solution_list[i-1]
+        ynm2 = self.solution_list[i-2]
+        tnm1 = self.T[i-1]
+        tnm2 = self.T[i-2]
+        hn = self.H[i]
+        hnm1 = self.H[i-1]
+        fnm1 = self.f(tnm1,ynm1)
+        fnm2 = self.f(tnm2,ynm2)
+
+        return ynm1 + hn * fnm1 \
+                + (fnm1 - fnm2) / hnm1 * hn*hn / 2
+
+    def integral_interpolant(self,xquery,x,y):
+        xsym = sp.Symbol('x')
+        poly_np = interpolate_sym(xsym,x,y)
+        poly_int = sp.integrate(poly_np)
+        poly_int_np = sp.lambdify(xsym, poly_int, modules="numpy")
+        return poly_int_np(xquery)
 
     def compute_step_size(self):
         num_iter = 0
