@@ -18,7 +18,12 @@ t = np.array([0, 0.25 ,0.5, 0.6, 0.8, 1])
 def f(t,y): return A @ y
 
 def solve_MoL(rtol):
-    solver = ODESolver(f=f,y0=y0,trange=trange,rtol=rtol)
+    solver = ODESolver(
+        f=f,
+        y0=y0,
+        trange=trange,
+        rtol=rtol
+    )
     solver.solve()
     
     Y = solver.Y

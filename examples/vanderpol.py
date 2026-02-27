@@ -11,7 +11,12 @@ def f(t,y):
     ])
 
 def solve_VanDerPol(rtol):
-    solver = ODESolver(f=f,y0=y0,trange=trange,rtol=rtol)
+    solver = ODESolver(
+        f=f,
+        y0=y0,
+        trange=trange,
+        rtol=rtol
+    )
     solver.solve()
     
     Y = solver.Y
