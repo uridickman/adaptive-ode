@@ -25,7 +25,7 @@ def newton_coeffs(
 def interpolate(
         x_data      :np.ndarray,
         y_data      :np.ndarray,
-        x_query     :np.ndarray
+        x_query     :np.ndarray,
     )               -> np.ndarray:
 
     n = len(x_data)
@@ -42,6 +42,28 @@ def interpolate(
     return out
 
 
-@jit(nopython=True,cache=True)
-def functional_newton_iteration(max_iter=4):
-    raise RuntimeError
+@jit(nopython=True, cache=True)
+def integral_of_interpolant_2o(xquery, x_data, y_data, order):
+    assert order <= 2 and order > 0, "Order cannot exceed 2 or preceed 0."
+    coeffs = newton_coeffs(x_data, y_data, order=order)
+    match order:
+        case 0:
+            return coeffs[0] * xquery
+
+        case 1:
+            x0 = x_data[0]
+            return (
+                coeffs[0] * xquery
+                + coeffs[1] * (xquery**2 / 2 - x0 * xquery)
+            )
+
+        case 2:
+            x0 = x_data[0]
+            x1 = x_data[1]
+
+            return (
+                coeffs[0] * xquery
+                + coeffs[1] * (xquery**2 / 2 - x0 * xquery)
+                + coeffs[2] * (xquery**3 / 3 - (x0 + x1) * xquery**2 / 2 + x0 * x1 * xquery
+                )
+            )
