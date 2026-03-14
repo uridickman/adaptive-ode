@@ -1,6 +1,5 @@
 from numba import jit
 import numpy as np
-import sympy as sp
 
 
 @jit(nopython=True,cache=True)
@@ -43,27 +42,17 @@ def interpolate(
 
 
 @jit(nopython=True, cache=True)
-def integral_of_interpolant_2o(xquery, x_data, y_data, order):
-    assert order <= 2 and order > 0, "Order cannot exceed 2 or preceed 0."
-    coeffs = newton_coeffs(x_data, y_data, order=order)
-    match order:
-        case 0:
-            return coeffs[0] * xquery
+def adams_order_1(ynm1, f, hn):
+    return ynm1 + f*hn
 
-        case 1:
-            x0 = x_data[0]
-            return (
-                coeffs[0] * xquery
-                + coeffs[1] * (xquery**2 / 2 - x0 * xquery)
-            )
+@jit(nopython=True, cache=True)
+def adams_moulton(ynm1, fn, fnm1, hn):
+    return ynm1 + hn/2*(fn+fnm1)
 
-        case 2:
-            x0 = x_data[0]
-            x1 = x_data[1]
+@jit(nopython=True, cache=True)
+def adams_bashforth_2(ynm1, fnm1, fnm2, hn,hnm1):
+    return ynm1 + fnm1*hn + (fnm1-fnm2)*2*hn*hn/hnm1
 
-            return (
-                coeffs[0] * xquery
-                + coeffs[1] * (xquery**2 / 2 - x0 * xquery)
-                + coeffs[2] * (xquery**3 / 3 - (x0 + x1) * xquery**2 / 2 + x0 * x1 * xquery
-                )
-            )
+@jit(nopython=True, cache=True)
+def adams_bashforth_1(ynm1, fnm1, hn):
+    return ynm1 + fnm1*hn   

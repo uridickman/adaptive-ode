@@ -13,7 +13,7 @@ ldiag = np.ones(k)
 A  = (np.diag(diag,k=0)+np.diag(ldiag,k=-1)) / dx
 A[0,0] = 1 # Enforce boundary condition
 
-t = np.array([0, 0.25 ,0.5, 0.6, 0.8, 1])
+t_eval = np.array([0, 0.25 ,0.5, 0.6, 0.8, 1])
 
 def f(t,y): return A @ y
 
@@ -22,6 +22,7 @@ def solve_MoL(rtol):
         f=f,
         y0=y0,
         trange=trange,
+        y_at=t_eval,
         rtol=rtol
     )
     solver.solve()

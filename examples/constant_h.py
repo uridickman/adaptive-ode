@@ -1,5 +1,6 @@
 from ..solver import ODESolver
 import numpy as np
+import matplotlib.pyplot as plt
 
 y0 = np.array([1,2])
 trange = (0,1)
@@ -20,3 +21,20 @@ def solve_constant_h():
     T = solver.T
 
     return T,Y
+
+T,Y = solve_constant_h()
+y1 = Y[:,0]
+y2 = Y[:,1]
+
+fig, ax = plt.subplots()
+
+ax.plot(T, y1, label="y1")
+ax.plot(T, y2, label="y2")
+
+ax.set_xlabel("t")
+ax.set_ylabel("state")
+
+ax.legend()
+ax.grid(True)
+
+plt.show()
