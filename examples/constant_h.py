@@ -19,22 +19,22 @@ def solve_constant_h():
     
     Y = solver.Y
     T = solver.T
+    H = solver.H
 
-    return T,Y
+    return T,Y,H
 
-T,Y = solve_constant_h()
+T,Y,H = solve_constant_h()
 y1 = Y[:,0]
 y2 = Y[:,1]
 
-fig, ax = plt.subplots()
+fig, (ax1,ax2) = plt.subplots(1,2)
 
-ax.plot(T, y1, label="y1")
-ax.plot(T, y2, label="y2")
+ax1.plot(T, y1, label="y1")
+ax1.plot(T, y2, label="y2")
 
-ax.set_xlabel("t")
-ax.set_ylabel("state")
+ax1.set_xlabel("t")
+ax1.set_ylabel("state")
 
-ax.legend()
-ax.grid(True)
+ax2.plot(T,H)
 
 plt.show()

@@ -29,5 +29,6 @@ def solve_MoL(rtol):
     
     Y = solver.Y
     T = solver.T
+    H = solver.H
 
-    return T,Y
+    return T,Y,H
