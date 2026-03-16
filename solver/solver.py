@@ -25,25 +25,32 @@ class ODESolver:
         self._etol = etol
         self._frac = 0.9
         self._p = 2
-        self._max_iter = 15
+        self._max_iter = 6
 
         step0 = StepState(
             self.tmin,
             self.h,
             self.f(self.tmin,y0).astype(np.float64),
-            y0.astype(np.float64)
+            y0.astype(np.float64),
+            0
         )
 
-        self.step_states.append(step0)
-        self.step_states_at_teval = []
-        self.t = float(self.tmin)
+        self.step_states.append(step0)          # All states at times determined by self.h
+        self.step_states_at_teval = []          # States at times determined by t_eval
+        self.t = float(self.tmin)               # Timestep of the current step
 
+
+        # Predict the first step size
         if self.is_adaptive:
-            self.h = self.predict_step_size(first_step=True)
+            self.h,num_iter_first = self.predict_step_size(True)
             step0.h = self.h
+            step0.num_iter = num_iter_first
         else:
             self.h = h
 
+        # If evaluating at specific times, then create a queue
+        # with the times at which to evaluate the solution.
+        # They will be interpolated using an order 3 interpolating polynomial
         if t_eval is not None and len(t_eval) > 0:
             self.interpolate_t = True
             self.t_eval_queue = deque(t_eval.astype(np.float64))
@@ -52,6 +59,9 @@ class ODESolver:
         
 
     def solve(self):
+        """Execute the solving sequences depending on if evaluating
+        the solution at specific times or not.
+        """
         if self.interpolate_t:
             self.solve_at_teval(adaptive=self.is_adaptive)
         else:
@@ -59,26 +69,27 @@ class ODESolver:
             
 
     def solve_at_teval(self,adaptive=False):
-        _, state_next = self.take_first_step(self.h)
+        _, state_next = take_first_step(self.step_states[-1],self.t,self.h,self.f,0)
         self.step_states.append(state_next)
         t_current_eval = self.t_eval_queue.popleft()
         while self.t_eval_queue:
             t_current_eval = self.t_eval_queue[0]
 
             if adaptive:
-                self.h = self.predict_step_size()
+                self.h,num_iter = self.predict_step_size()
             self.t += self.h
-            _, state_next = self.take_step(self.h)
+            _, state_next = take_step(self.step_states[-1],self.step_states[-2],self.t,self.h,self.f,num_iter)
             self.step_states.append(state_next)
 
-            while self.step_states[-1].t >= t_current_eval:
+            while self.t >= t_current_eval:
                 self.t_eval_queue.popleft()
                 state_interp = self.interpolate_state(t_current_eval)
+                state_interp.num_iter = 0
                 self.step_states_at_teval.append(state_interp)
                 if not self.t_eval_queue:
                     break
                 t_current_eval = self.t_eval_queue[0]
-        self.T, self.Y, self.F, self.H = unpack_step_states(self.step_states_at_teval)
+        self.T, self.Y, self.F, self.H, self.N = unpack_step_states(self.step_states_at_teval)
 
 
     def interpolate_state(self,t_current_eval):
@@ -96,50 +107,44 @@ class ODESolver:
 
         state_interp = StepState(
             t_current_eval,
-            -1,
+            self.h,
             self.f(t_current_eval,y_current_eval),
-            y_current_eval
+            y_current_eval,
+            0
         )
 
         return state_interp
 
-
     def solve_no_teval(self, adaptive=False):
-        _, state_next = self.take_first_step(self.h)
+        _, state_next = take_first_step(self.step_states[-1],self.t,self.h,self.f,0)
         self.step_states.append(state_next)
 
         while self.t < self.tmax:
             if adaptive:
-                self.h = self.predict_step_size()
+                self.h,num_iter = self.predict_step_size()
             self.t += self.h
-            _, state_next = self.take_step(self.h)
+            _, state_next = take_step(self.step_states[-1],self.step_states[-2],self.t,self.h,self.f,num_iter)
             self.step_states.append(state_next)
     
-        self.T, self.Y, self.F, self.H = unpack_step_states(self.step_states)
-
+        self.T, self.Y, self.F, self.H, self.N = unpack_step_states(self.step_states)
 
     def predict_step_size(self,first_step=False):
-        h = self.h
+        args = (self.h,
+                self.t,
+                self.f,
+                self._etol,
+                self._frac,
+                self._p,
+                self._max_iter
+            )
+        if first_step:
+            return predict_first_step_size(
+                        self.step_states[-1],
+                        *args
+                    )
         
-        for _ in range(self._max_iter):
-            state_predict,state_correct = self.take_first_step(h) if first_step else self.take_step(h)
-            est = lte(state_predict.y,state_correct.y)
-            if est <= self._etol:
-                return h
-            h = new_step_size(est,h,self._frac,self._etol,self._p)
-
-        raise RuntimeError("Step size did not converge.")
-
-    def take_first_step(self, hn):
-        state_prev = self.step_states[-1]
-        state_predict = predict_first(self.t,hn,self.f,state_prev)
-        state_correct = correct(self.t,hn,self.f,state_prev, state_predict)
-        return state_predict,state_correct
-
-    def take_step(self, hn):
-        state_prev  = self.step_states[-1]
-        state_prev2 = self.step_states[-2]
-        state_predict = predict(self.t,hn,self.f,state_prev,state_prev2)
-        state_correct = correct(self.t,hn,self.f,state_prev, state_predict)
-        return state_predict,state_correct
-    
+        return predict_step_size(
+                    self.step_states[-1],
+                    self.step_states[-2],
+                    *args
+                )

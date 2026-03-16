@@ -8,15 +8,17 @@ spec = [
     ('h', types.float64),
     ('f', types.float64[:]),
     ('y', types.float64[:]),
+    ('num_iter', types.float64),
 ]
 
 @jitclass(spec)
 class StepState:
-    def __init__(self, t, h, f, y):
+    def __init__(self, t, h, f, y, n):
         self.t = t
         self.h = h
         self.f = f
         self.y = y
+        self.num_iter = n
 
 @njit(cache=True)
 def newton_coeffs(
@@ -58,11 +60,53 @@ def interpolate(
 
 @njit(cache=True)
 def lte(ypred:np.ndarray,ycorrect:np.ndarray):
-    return np.linalg.norm(ypred-ycorrect,ord=2)
+    return np.linalg.norm(ypred-ycorrect,ord=2)*12/7
 
 @njit(cache=True)
 def new_step_size(est,hn,frac,etol,p):
     return (frac * etol / est)**(1/(p+1))*hn
+
+@njit
+def take_first_step(state_nm1,tn,hn,f,num_iter):
+        state_predict = predict_first(tn,hn,f,state_nm1,0)
+        state_correct = correct(tn,hn,f,state_nm1, state_predict,num_iter)
+        return state_predict,state_correct
+    
+@njit
+def take_step(state_nm1,state_nm2,tn,hn,f,num_iter):
+    state_predict = predict(tn,hn,f,state_nm1,state_nm2,0)
+    state_correct = correct(tn,hn,f,state_nm1, state_predict,num_iter)
+    return state_predict,state_correct
+
+@njit
+def predict_step_size(state_nm1,state_nm2,hn,tn,f,etol,frac,p,max_iter):
+    h = hn
+    num_iter = 0
+    
+    for _ in range(max_iter):
+        state_predict,state_correct = take_step(state_nm1,state_nm2,tn,h,f,num_iter)
+        est = lte(state_predict.y,state_correct.y)
+        if est <= etol:
+            return h,num_iter
+        h = new_step_size(est,h,frac,etol,p)
+        num_iter += 1
+
+    raise RuntimeError("Step size did not converge.")
+
+@njit
+def predict_first_step_size(state_nm1,hn,tn,f,etol,frac,p,max_iter):
+    h = hn
+    num_iter = 0
+    
+    for _ in range(max_iter):
+        state_predict,state_correct = take_first_step(state_nm1,tn,h,f,num_iter)
+        est = h*lte(state_predict.y,state_correct.y)
+        if est <= etol:
+            return h,num_iter
+        h = new_step_size(est,h,frac,etol,p)
+        num_iter += 1
+
+    raise RuntimeError("Step size did not converge.")
 
 @njit
 def unpack_step_states(step_states: types.List):
@@ -73,15 +117,17 @@ def unpack_step_states(step_states: types.List):
     hvec = np.empty(n-1, dtype=np.float64)
     yvec = np.empty((n,m), dtype=np.float64)
     fvec = np.empty((n,m), dtype=np.float64)
+    nvec = np.empty(n, dtype=np.float64)
 
     for i in range(n):
         tvec[i] = step_states[i].t
         yvec[i] = step_states[i].y
         fvec[i] = step_states[i].f
+        nvec[i] = step_states[i].num_iter
         if i > 0:
             hvec[i-1] = step_states[i].h
 
-    return tvec, yvec, fvec, hvec
+    return tvec, yvec, fvec, hvec, nvec
 
 @njit
 def correct(
@@ -89,7 +135,8 @@ def correct(
         hn:np.float64,
         f:types.Callable,
         state_prev:StepState,
-        state_predict:StepState
+        state_predict:StepState,
+        num_iter:int
         
     ):
     ynm1 = state_prev.y
@@ -101,7 +148,8 @@ def correct(
         t,
         hn,
         f(t,y_correct),
-        y_correct
+        y_correct,
+        num_iter
     )
 
 @njit
@@ -109,14 +157,16 @@ def predict_first(
         t:np.float64,
         hn:np.float64,
         f:Callable,
-        state_prev:StepState
+        state_prev:StepState,
+        num_iter
     ):
     y_predict = adams_bashforth_1(state_prev.y, state_prev.f, hn)
     return StepState(
         t,
         hn,
         f(t,y_predict),
-        y_predict
+        y_predict,
+        num_iter
     )
 
 @njit
@@ -125,7 +175,8 @@ def predict(
         hn:np.float64,
         f:Callable,
         state_prev:StepState,
-        state_prev2:StepState
+        state_prev2:StepState,
+        num_iter
     ):
 
     y_predict = adams_bashforth_2(state_prev.y, state_prev.f, state_prev2.f, hn, state_prev.h)
@@ -133,7 +184,8 @@ def predict(
         t,
         hn,
         f(t,y_predict),
-        y_predict
+        y_predict,
+        num_iter
     )
 
 @njit

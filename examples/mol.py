@@ -38,7 +38,7 @@ def solve_MoL(etol):
 
     Y_eval = sol.sol(T).T
 
-    _, ax = plt.subplots()
+    _, (ax,ax2) = plt.subplots(1,2)
 
     for t,y,y_eval in zip(T,Y,Y_eval):
         ax.plot(X, y,label=f"t={t:.2f}")
@@ -47,5 +47,8 @@ def solve_MoL(etol):
     ax.legend()
     ax.set_xlabel("x")
     ax.set_ylabel("y(t,x)")
+
+    ax2.plot(solver.H)
+    ax2.set_yscale("log")
 
     plt.show()

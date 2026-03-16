@@ -44,7 +44,7 @@ def solve_PredatorPrey(etol):
     ax1.set_xlabel("y1")
     ax1.set_ylabel("y2")
 
-    ax2.plot(H)
+    ax2.plot(solver.H)
     ax2.set_xlabel("Step number")
     ax2.set_ylabel("Step size (s)")
     ax2.set_yscale("log")

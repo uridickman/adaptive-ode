@@ -8,6 +8,6 @@ etol = 1e-6
 
 # solve_PredatorPrey(etol)
 
-# solve_VanDerPol(etol)
+solve_VanDerPol(etol)
 
-solve_MoL(etol)
+# solve_MoL(etol)
