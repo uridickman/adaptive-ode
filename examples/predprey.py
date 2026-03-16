@@ -6,7 +6,6 @@ from scipy.integrate import solve_ivp
 
 y0 = np.array([10,10])
 trange = (0,100)
-t_eval = np.linspace(1,99,num=50)
 
 @njit(cache=True)
 def f(t,y):
@@ -20,8 +19,7 @@ def solve_PredatorPrey(etol):
         f=f,
         y0=y0,
         trange=trange,
-        etol=etol,
-        t_eval=t_eval
+        etol=etol
     )
     solver.solve()
     
@@ -46,10 +44,9 @@ def solve_PredatorPrey(etol):
     ax1.set_xlabel("y1")
     ax1.set_ylabel("y2")
 
-    ax2.plot(T,y2,label="My solver")
-    ax2.plot(T,y2_eval,label="Scipy")
-    ax2.set_xlabel("T (s)")
-    ax2.set_ylabel("y2")
+    ax2.plot(H)
+    ax2.set_xlabel("Step number")
+    ax2.set_ylabel("Step size (s)")
     ax2.set_yscale("log")
 
     plt.show()

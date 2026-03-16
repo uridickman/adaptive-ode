@@ -6,8 +6,8 @@ etol = 1e-4
 
 # solve_constant_h()
 
-solve_PredatorPrey(etol)
+# solve_PredatorPrey(etol)
 
 # solve_VanDerPol(etol)
 
-# solve_MoL(etol)
+solve_MoL(etol)

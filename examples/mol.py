@@ -6,7 +6,7 @@ from scipy.integrate import solve_ivp
 
 trange = (0,1)
 xrange = (0,1)
-k = 5
+k = 100
 dx = (xrange[1] - xrange[0]) / k
 X = np.linspace(*xrange,num=k+1)
 y0 = np.exp(-10*X)
@@ -33,28 +33,19 @@ def solve_MoL(etol):
     
     Y = solver.Y
     T = solver.T
-    H = solver.H
-
-    y1 = Y[:,0]
-    y2 = Y[:,-1]
 
     sol = solve_ivp(f, trange, y0, method='RK45', dense_output=True, rtol=etol, atol=etol)
 
-    y_eval = sol.sol(T)
-    y1_eval,y2_eval = y_eval[0],y_eval[-1]
+    Y_eval = sol.sol(T).T
 
-    _, (ax1,ax2) = plt.subplots(1,2)
+    _, ax = plt.subplots()
 
-    ax1.plot(y1, y2,label="My solver",color="red",linewidth=2)
-    ax1.plot(y1_eval, y2_eval,label="Scipy",color="dodgerblue",linestyle="dashed",linewidth=2)
-    ax1.legend()
-
-    ax1.set_xlabel("y1")
-    ax1.set_ylabel("y2")
-
-    ax2.plot(H)
-    ax2.set_xlabel("Step num")
-    ax2.set_ylabel("Step size (s)")
-    ax2.set_yscale("log")
+    for t,y,y_eval in zip(T,Y,Y_eval):
+        ax.plot(X, y,label=f"t={t:.2f}")
+        ax.plot(X, y_eval,linestyle="dashed",color="black",alpha=0.5,linewidth=2)
+    ax.plot([],[],linestyle="dashed",color="grey",linewidth=2,label="Scipy")
+    ax.legend()
+    ax.set_xlabel("x")
+    ax.set_ylabel("y(t,x)")
 
     plt.show()

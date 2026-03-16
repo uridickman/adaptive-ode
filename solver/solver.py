@@ -62,23 +62,28 @@ class ODESolver:
         _, state_next = self.take_first_step(self.h)
         self.step_states.append(state_next)
         t_current_eval = self.t_eval_queue.popleft()
-        while self.t < self.tmax:
+        while self.t_eval_queue:
+            t_current_eval = self.t_eval_queue[0]
+
             if adaptive:
                 self.h = self.predict_step_size()
             self.t += self.h
             _, state_next = self.take_step(self.h)
             self.step_states.append(state_next)
-            while self.t > t_current_eval:
+
+            while self.step_states[-1].t >= t_current_eval:
+                self.t_eval_queue.popleft()
                 state_interp = self.interpolate_state(t_current_eval)
                 self.step_states_at_teval.append(state_interp)
-                if self.t_eval_queue:
-                    t_current_eval = self.t_eval_queue.popleft()
-                else:
+                if not self.t_eval_queue:
                     break
+                t_current_eval = self.t_eval_queue[0]
         self.T, self.Y, self.F, self.H = unpack_step_states(self.step_states_at_teval)
 
 
     def interpolate_state(self,t_current_eval):
+        if t_current_eval == self.t:
+            return self.step_states[-1]
         num_pts = min(len(self.step_states), 3)
         t_interp = np.array([s.t for s in self.step_states[-num_pts:]], dtype=np.float64)
         y_interp = np.array([s.y for s in self.step_states[-num_pts:]], dtype=np.float64)
@@ -121,8 +126,8 @@ class ODESolver:
             est = lte(state_predict.y,state_correct.y)
             if est <= self._etol:
                 return h
-            h = new_step_size(est,state_correct.h,self._frac,self._etol,self._p)
-    
+            h = new_step_size(est,h,self._frac,self._etol,self._p)
+
         raise RuntimeError("Step size did not converge.")
 
     def take_first_step(self, hn):
