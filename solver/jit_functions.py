@@ -96,7 +96,7 @@ def correct(
     fnm1 = state_prev.f
     y_predict = state_predict.y
     fn = f(t, y_predict)
-    y_correct = adams_moulton(ynm1, fn, fnm1, hn)
+    y_correct = adams_moulton_2(ynm1, fn, fnm1, hn)
     return StepState(
         t,
         hn,
@@ -137,16 +137,12 @@ def predict(
     )
 
 @njit
-def adams_order_1(ynm1, f, hn):
-    return ynm1 + f*hn
-
-@njit
-def adams_moulton(ynm1, fn, fnm1, hn):
+def adams_moulton_2(ynm1, fn, fnm1, hn):
     return ynm1 + hn/2*(fn+fnm1)
 
 @njit
 def adams_bashforth_2(ynm1, fnm1, fnm2, hn, hnm1):
-    return ynm1 + fnm1*hn + (fnm1-fnm2)*2*hn*hn/hnm1
+    return ynm1 + fnm1*hn + (fnm1-fnm2)*hn*hn/2/hnm1
 
 @njit
 def adams_bashforth_1(ynm1, fnm1, hn):
