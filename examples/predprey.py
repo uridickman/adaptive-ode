@@ -1,23 +1,27 @@
 from solver import ODESolver
 import numpy as np
 import matplotlib.pyplot as plt
+from numba import njit
 from scipy.integrate import solve_ivp
 
 y0 = np.array([10,10])
 trange = (0,100)
+t_eval = np.linspace(1,99,num=50)
 
+@njit(cache=True)
 def f(t,y):
-    return np.array([
-        0.25*y[0] - 0.01*y[0]*y[1],
-        -y[1] + 0.01*y[0]*y[1]
-    ])
+    out = np.empty(2, dtype=np.float64)
+    out[0] = 0.25*y[0] - 0.01*y[0]*y[1]
+    out[1] = -y[1] + 0.01*y[0]*y[1]
+    return out
 
 def solve_PredatorPrey(etol):
     solver = ODESolver(
         f=f,
         y0=y0,
         trange=trange,
-        etol=etol
+        etol=etol,
+        t_eval=t_eval
     )
     solver.solve()
     
@@ -28,7 +32,7 @@ def solve_PredatorPrey(etol):
     y1 = Y[:,0]
     y2 = Y[:,1]
 
-    sol = solve_ivp(f, trange, y0, method='RK45', dense_output=True, rtol=etol, atol=etol,vectorized=True)
+    sol = solve_ivp(f, trange, y0, method='RK45', dense_output=True, rtol=etol, atol=etol)
 
     y_eval = sol.sol(T)
     y1_eval,y2_eval = y_eval[0],y_eval[1]
@@ -42,9 +46,10 @@ def solve_PredatorPrey(etol):
     ax1.set_xlabel("y1")
     ax1.set_ylabel("y2")
 
-    ax2.plot(H)
-    ax2.set_xlabel("Step num")
-    ax2.set_ylabel("Step size (s)")
+    ax2.plot(T,y2,label="My solver")
+    ax2.plot(T,y2_eval,label="Scipy")
+    ax2.set_xlabel("T (s)")
+    ax2.set_ylabel("y2")
     ax2.set_yscale("log")
 
     plt.show()

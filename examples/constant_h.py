@@ -1,13 +1,19 @@
 from solver import ODESolver
 import numpy as np
 import matplotlib.pyplot as plt
+from numba import njit
 from scipy.integrate import solve_ivp
 
 y0 = np.array([1,2])
 trange = (0,1)
 h = 0.01
 
-def f(t,y): return np.array([-y[0],-10*(y[1]-t*t) + 2*t])
+@njit(cache=True)
+def f(t,y):
+    out = np.empty(2, dtype=np.float64)
+    out[0] = -y[0]
+    out[1] = -10*(y[1]-t*t) + 2*t
+    return out
 
 def solve_constant_h():
     solver = ODESolver(
@@ -25,7 +31,7 @@ def solve_constant_h():
     y1 = Y[:,0]
     y2 = Y[:,1]
 
-    sol = solve_ivp(f, trange, y0, method='RK45', dense_output=True, rtol=1e-3, atol=1e-3,vectorized=True)
+    sol = solve_ivp(f, trange, y0, method='RK45', dense_output=True, rtol=1e-3, atol=1e-3)
 
     y_eval = sol.sol(T)
     y1_eval,y2_eval = y_eval[0],y_eval[1]
