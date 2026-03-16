@@ -19,7 +19,7 @@ A[0,0] = 1
 t_eval = np.array([0, 0.25 ,0.5, 0.6, 0.8, 1])
 
 @njit(cache=True)
-def f(t,y): return A @ y
+def f(t,y): return A @ np.ascontiguousarray(y)
 
 def solve_MoL(etol):
     solver = ODESolver(

@@ -1,6 +1,6 @@
 from examples import *
 
-etol = 1e-4
+etol = 1e-6
 
 # rtol_list = [1e-3,1e-6]
 
