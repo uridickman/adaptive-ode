@@ -101,10 +101,40 @@ For constant step size, the previous equations are still used, but with the addi
 
 \subsection*{Step Size Control}
 
-\subsection*{Evaluating the Solution at Specific Times}
+The step size is accepted if the Local Truncation Error is below the provided error tolerance ETOL.
+The LTE is estimated by the difference between the predictor and corrector methods
+\begin{equation}
+	\text{LTE}\approx\left|\frac{C_{p+1}}{C_{p+1}-\hat{C}_{p+1}}\right|\lVert \vb{y}_{\text{pred}}-\vb{y}_{\text{corr}} \rVert
+	\label{eq:lte}
+\end{equation}
+where $C_{p+1}$ is the factor in the LTE estimation of the method
+\begin{equation}
+	\vb{d}_n=|C_{p+1}h^py^{(p+1)}|+\mathcal{O}(h^{p+1})
+\end{equation}
+and $\hat{C}_{p+1}$ for the predictor method and $C_{p+1}$ is the factor for the corrector method.
 
-The Predictor-Corrector local truncation error is given by
-pg 150
+For Adams-Bashforth, the predictor, $\hat{C}_{p+1}=-\frac{1}{12}$.
+For Adams-Moulton, the corrector, $\hat{C}_{p+1}=\frac{5}{12}$.
+Thus, the LTE estimate is
+\begin{equation}
+	\text{EST}\approx\frac{1}{6}\lVert \vb{y}_{\text{pred}}-\vb{y}_{\text{corr}} \rVert.
+	\label{eq:lte}
+\end{equation}
+
+We reject a step if $\text{EST}>\text{ETOL}$.
+Then we adjust the step size by
+\begin{equation}
+	h_n\leftarrow r\cdot h_n
+\end{equation}
+where
+\begin{equation}
+	r^{p+1}=\frac{\text{frac}\cdot\text{ETOL}}{\text{EST}}
+	\label{eq:step_size_adjustment}
+\end{equation}
+which results in a decrease in step size because $\text{EST}$ is larger.
+If we accept a step, then $\text{EST}<\text{ETOL}$ and we use \eqref{eq:step_size_adjustment} as the initialization for the next step size selection iteration, thus resulting in an increase in step size due to smaller value of $\text{EST}$.
+
+\subsection*{Evaluating the Solution at Specific Times}
 
 \subsection*{Examples}
 

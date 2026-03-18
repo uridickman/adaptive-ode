@@ -84,7 +84,6 @@ class ODESolver:
             _, state_next = take_step(self.step_states[-1],self.step_states[-2],self.t,self.h,self.f,num_iter)
             self.step_states.append(state_next)
             
-            # t_current_eval = self.t_eval_queue[0]
             while self.t >= t_current_eval:
                 self.t_eval_queue.popleft()
                 state_interp = self.interpolate_state(t_current_eval)

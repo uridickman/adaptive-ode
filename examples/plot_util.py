@@ -2,8 +2,6 @@ fs = 16
 ts = 14
 lw = 2
 
-
-
 def plot(t,y,h,axs,label,color,linestyle):
     
     text_args = {
