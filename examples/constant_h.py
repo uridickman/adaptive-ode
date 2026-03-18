@@ -2,7 +2,7 @@ from solver import ODESolver
 import numpy as np
 import matplotlib.pyplot as plt
 from numba import njit
-from scipy.integrate import solve_ivp
+from .plot_util import plot
 
 y0 = np.array([1,2])
 trange = (0,1)
@@ -24,30 +24,20 @@ def solve_constant_h():
     )
     solver.solve()
     
-    Y = solver.Y
-    T = solver.T
-    H = solver.H
+    sol = (
+        np.copy(solver.T),
+        np.copy(solver.Y),
+        np.copy(solver.H)
+    )
 
-    y1 = Y[:,0]
-    y2 = Y[:,1]
+    solver.solve()
 
-    sol = solve_ivp(f, trange, y0, method='RK45', dense_output=True, rtol=1e-3, atol=1e-3)
+    sol = (
+        np.copy(solver.T),
+        np.copy(solver.Y),
+        np.copy(solver.H)
+    )
 
-    y_eval = sol.sol(T)
-    y1_eval,y2_eval = y_eval[0],y_eval[1]
-
-    _, (ax1,ax2) = plt.subplots(1,2)
-
-    ax1.plot(y1, y2,label="My solver",color="red",linewidth=2)
-    ax1.plot(y1_eval, y2_eval,label="Scipy",color="dodgerblue",linestyle="dashed",linewidth=2)
-    ax1.legend()
-
-    ax1.set_xlabel("y1")
-    ax1.set_ylabel("y2")
-
-    ax2.plot(H)
-    ax2.set_xlabel("Step num")
-    ax2.set_ylabel("Step size (s)")
-    ax2.set_yscale("log")
-
-    plt.show()
+    fig, axs = plt.subplots(2,2,figsize=(12,12),constrained_layout=True)
+    plot(*sol,axs,None,"red","solid")
+    fig.savefig("figs/constant_h.png",dpi=300)

@@ -9,7 +9,7 @@ class ODESolver:
             f           : Callable,
             y0          : np.ndarray,
             trange      : Tuple[float,float],
-            t_eval      : np.ndarray=None,
+            t_eval      : np.ndarray=[],
             etol        : float=1e-3,
             h           : float=-1
             
@@ -17,16 +17,20 @@ class ODESolver:
         
         self.tmin,self.tmax = trange
         self.f = f
-        self.h = 0.1
+        
         self.is_adaptive = h < 0
-
-        self.step_states = []
+        self.h = 0.1 if self.is_adaptive else h
+        self.t_eval_input = t_eval
+        self.y0 = y0
 
         self._etol = etol
         self._frac = 0.9
         self._p = 2
-        self._max_iter = 6
+        self._max_iter = 100
+        
 
+    def initialize(self,y0,t_eval):
+        self.step_states = []
         step0 = StepState(
             self.tmin,
             self.h,
@@ -42,26 +46,25 @@ class ODESolver:
 
         # Predict the first step size
         if self.is_adaptive:
-            self.h,num_iter_first = self.predict_step_size(True)
+            self.h,self.h_next,num_iter_first = self.predict_step_size(self.h,True)
             step0.h = self.h
             step0.num_iter = num_iter_first
-        else:
-            self.h = h
 
         # If evaluating at specific times, then create a queue
         # with the times at which to evaluate the solution.
         # They will be interpolated using an order 3 interpolating polynomial
-        if t_eval is not None and len(t_eval) > 0:
+        if len(t_eval) > 0:
             self.interpolate_t = True
             self.t_eval_queue = deque(t_eval.astype(np.float64))
         else:
             self.interpolate_t = False
-        
+
 
     def solve(self):
         """Execute the solving sequences depending on if evaluating
         the solution at specific times or not.
         """
+        self.initialize(self.y0,self.t_eval_input)
         if self.interpolate_t:
             self.solve_at_teval(adaptive=self.is_adaptive)
         else:
@@ -72,15 +75,16 @@ class ODESolver:
         _, state_next = take_first_step(self.step_states[-1],self.t,self.h,self.f,0)
         self.step_states.append(state_next)
         t_current_eval = self.t_eval_queue.popleft()
-        while self.t_eval_queue:
-            t_current_eval = self.t_eval_queue[0]
-
+        while self.t_eval_queue or self.t <= self.tmax:
             if adaptive:
-                self.h,num_iter = self.predict_step_size()
+                self.h,self.h_next,num_iter = self.predict_step_size(self.h_next)
+            else:
+                num_iter = 0
             self.t += self.h
             _, state_next = take_step(self.step_states[-1],self.step_states[-2],self.t,self.h,self.f,num_iter)
             self.step_states.append(state_next)
-
+            
+            # t_current_eval = self.t_eval_queue[0]
             while self.t >= t_current_eval:
                 self.t_eval_queue.popleft()
                 state_interp = self.interpolate_state(t_current_eval)
@@ -93,7 +97,7 @@ class ODESolver:
 
 
     def interpolate_state(self,t_current_eval):
-        if t_current_eval == self.t:
+        if t_current_eval == self.tmin:
             return self.step_states[-1]
         num_pts = min(len(self.step_states), 3)
         t_interp = np.array([s.t for s in self.step_states[-num_pts:]], dtype=np.float64)
@@ -121,15 +125,17 @@ class ODESolver:
 
         while self.t < self.tmax:
             if adaptive:
-                self.h,num_iter = self.predict_step_size()
+                self.h,self.h_next,num_iter = self.predict_step_size(self.h_next)
+            else:
+                num_iter = 0
             self.t += self.h
             _, state_next = take_step(self.step_states[-1],self.step_states[-2],self.t,self.h,self.f,num_iter)
             self.step_states.append(state_next)
     
         self.T, self.Y, self.F, self.H, self.N = unpack_step_states(self.step_states)
 
-    def predict_step_size(self,first_step=False):
-        args = (self.h,
+    def predict_step_size(self,h0,first_step=False):
+        args = (h0,
                 self.t,
                 self.f,
                 self._etol,

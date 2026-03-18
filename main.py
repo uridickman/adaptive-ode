@@ -1,13 +1,9 @@
 from examples import *
 
-etol = 1e-6
+solve_constant_h()
 
-# rtol_list = [1e-3,1e-6]
+solve_PredatorPrey()
 
-# solve_constant_h()
+solve_VanDerPol()
 
-# solve_PredatorPrey(etol)
-
-solve_VanDerPol(etol)
-
-# solve_MoL(etol)
+solve_MoL()

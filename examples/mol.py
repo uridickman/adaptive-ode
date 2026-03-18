@@ -2,7 +2,10 @@ from solver import ODESolver
 import numpy as np
 import matplotlib.pyplot as plt
 from numba import njit
-from scipy.integrate import solve_ivp
+
+fs = 16
+ts = 14
+lw = 2
 
 trange = (0,1)
 xrange = (0,1)
@@ -21,34 +24,27 @@ t_eval = np.array([0, 0.25 ,0.5, 0.6, 0.8, 1])
 @njit(cache=True)
 def f(t,y): return A @ np.ascontiguousarray(y)
 
-def solve_MoL(etol):
+def solve_MoL():
     solver = ODESolver(
         f=f,
         y0=y0,
         trange=trange,
         t_eval=t_eval,
-        etol=etol
+        etol=1e-3
     )
     solver.solve()
     
     Y = solver.Y
     T = solver.T
 
-    sol = solve_ivp(f, trange, y0, method='RK45', dense_output=True, rtol=etol, atol=etol)
+    fig, ax = plt.subplots(figsize=(6,6))
 
-    Y_eval = sol.sol(T).T
+    for t,y in zip(T,Y):
+        ax.plot(X, y,label=f"t={t:.2f}",linewidth=lw)
 
-    _, (ax,ax2) = plt.subplots(1,2)
+    ax.legend(fontsize=14)
+    ax.set_xlabel("x",fontsize=fs)
+    ax.set_ylabel("y(t,x)",fontsize=fs)
+    ax.tick_params("both",labelsize=ts)
 
-    for t,y,y_eval in zip(T,Y,Y_eval):
-        ax.plot(X, y,label=f"t={t:.2f}")
-        ax.plot(X, y_eval,linestyle="dashed",color="black",alpha=0.5,linewidth=2)
-    ax.plot([],[],linestyle="dashed",color="grey",linewidth=2,label="Scipy")
-    ax.legend()
-    ax.set_xlabel("x")
-    ax.set_ylabel("y(t,x)")
-
-    ax2.plot(solver.H)
-    ax2.set_yscale("log")
-
-    plt.show()
+    fig.savefig("figs/mol.png",dpi=300)

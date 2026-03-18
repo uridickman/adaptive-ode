@@ -2,7 +2,7 @@ from solver import ODESolver
 import numpy as np
 import matplotlib.pyplot as plt
 from numba import njit
-from scipy.integrate import solve_ivp
+from .plot_util import plot
 
 y0 = np.array([10,10])
 trange = (0,100)
@@ -14,39 +14,31 @@ def f(t,y):
     out[1] = -y[1] + 0.01*y[0]*y[1]
     return out
 
-def solve_PredatorPrey(etol):
+def solve_PredatorPrey():
     solver = ODESolver(
         f=f,
         y0=y0,
         trange=trange,
-        etol=etol
+        etol=1e-3
     )
     solver.solve()
     
-    Y = solver.Y
-    T = solver.T
-    H = solver.H
+    sol1 = (
+        np.copy(solver.T),
+        np.copy(solver.Y),
+        np.copy(solver.H)
+    )
 
-    y1 = Y[:,0]
-    y2 = Y[:,1]
+    solver._etol = 1e-6
+    solver.solve()
 
-    sol = solve_ivp(f, trange, y0, method='RK45', dense_output=True, rtol=etol, atol=etol)
+    sol2 = (
+        np.copy(solver.T),
+        np.copy(solver.Y),
+        np.copy(solver.H)
+    )
 
-    y_eval = sol.sol(T)
-    y1_eval,y2_eval = y_eval[0],y_eval[1]
-
-    _, (ax1,ax2) = plt.subplots(1,2)
-
-    ax1.plot(y1, y2,label="My solver",color="red",linewidth=2)
-    ax1.plot(y1_eval, y2_eval,label="Scipy",color="dodgerblue",linestyle="dashed",linewidth=2)
-    ax1.legend()
-
-    ax1.set_xlabel("y1")
-    ax1.set_ylabel("y2")
-
-    ax2.plot(solver.H)
-    ax2.set_xlabel("Step number")
-    ax2.set_ylabel("Step size (s)")
-    ax2.set_yscale("log")
-
-    plt.show()
+    fig, axs = plt.subplots(2,2,figsize=(12,12),constrained_layout=True)
+    plot(*sol1,axs,f"etol={1e-3}","red","solid")
+    plot(*sol2,axs,f"etol={1e-6}","dodgerblue","dashed")
+    fig.savefig("figs/predprey.png",dpi=300)

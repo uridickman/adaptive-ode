@@ -60,7 +60,7 @@ def interpolate(
 
 @njit(cache=True)
 def lte(ypred:np.ndarray,ycorrect:np.ndarray):
-    return np.linalg.norm(ypred-ycorrect,ord=2)*12/7
+    return np.linalg.norm(ypred-ycorrect,ord=2)/6
 
 @njit(cache=True)
 def new_step_size(est,hn,frac,etol,p):
@@ -68,9 +68,9 @@ def new_step_size(est,hn,frac,etol,p):
 
 @njit
 def take_first_step(state_nm1,tn,hn,f,num_iter):
-        state_predict = predict_first(tn,hn,f,state_nm1,0)
-        state_correct = correct(tn,hn,f,state_nm1, state_predict,num_iter)
-        return state_predict,state_correct
+    state_predict = predict_first(tn,hn,f,state_nm1,0)
+    state_correct = correct(tn,hn,f,state_nm1, state_predict,num_iter)
+    return state_predict,state_correct
     
 @njit
 def take_step(state_nm1,state_nm2,tn,hn,f,num_iter):
@@ -80,33 +80,36 @@ def take_step(state_nm1,state_nm2,tn,hn,f,num_iter):
 
 @njit
 def predict_step_size(state_nm1,state_nm2,hn,tn,f,etol,frac,p,max_iter):
-    h = hn
+    h_prev = hn
     num_iter = 0
     
     for _ in range(max_iter):
-        state_predict,state_correct = take_step(state_nm1,state_nm2,tn,h,f,num_iter)
+        state_predict,state_correct = take_step(state_nm1,state_nm2,tn,h_prev,f,num_iter)
         est = lte(state_predict.y,state_correct.y)
+        h_next = new_step_size(est,h_prev,frac,etol,p)
         if est <= etol:
-            return h,num_iter
-        h = new_step_size(est,h,frac,etol,p)
+            return h_prev,h_next,num_iter
+        h_prev = h_next
         num_iter += 1
 
     raise RuntimeError("Step size did not converge.")
 
 @njit
 def predict_first_step_size(state_nm1,hn,tn,f,etol,frac,p,max_iter):
-    h = hn
+    h_prev = hn
     num_iter = 0
     
     for _ in range(max_iter):
-        state_predict,state_correct = take_first_step(state_nm1,tn,h,f,num_iter)
-        est = h*lte(state_predict.y,state_correct.y)
+        state_predict,state_correct = take_first_step(state_nm1,tn,h_prev,f,num_iter)
+        est = lte(state_predict.y,state_correct.y)
+        h_next = new_step_size(est,h_prev,frac,etol,p)
         if est <= etol:
-            return h,num_iter
-        h = new_step_size(est,h,frac,etol,p)
+            return h_prev,h_next,num_iter
+        h_prev = h_next
         num_iter += 1
 
     raise RuntimeError("Step size did not converge.")
+
 
 @njit
 def unpack_step_states(step_states: types.List):
