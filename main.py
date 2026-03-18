@@ -1,12 +1,21 @@
 from examples import *
 from pathlib import Path
+import os
 
-Path("./figs").mkdir(parents=True, exist_ok=True)
+if __name__ == "__main__":
 
-solve_constant_h()
+    Path("./figs").mkdir(parents=True, exist_ok=True)
 
-solve_PredatorPrey()
+    print("Solving example with constant timestep...")
+    solve_constant_h()
 
-solve_VanDerPol()
+    print("Solving Predator-Prey problem...")
+    solve_PredatorPrey()
 
-solve_MoL()
+    print("Solving Van Der Pol Oscillator...")
+    solve_VanDerPol()
+
+    print("Solving Method of Lines upwind advection with timestep interpolation...")
+    solve_MoL()
+
+    print(f"Saved figures to {os.path.join(os.getcwd(),"figs")}")

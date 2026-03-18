@@ -22,7 +22,8 @@ def plot(t,y,h,axs,label,color,linestyle):
     axs[0,1].plot(t,y[:,1],**plot_args)
     axs[0,1].set_xlabel("Time",**text_args)
     axs[0,1].set_ylabel("Y2",**text_args)
-    axs[0,1].legend(loc="upper right",**text_args)
+    if label:
+        axs[0,1].legend(loc="upper right",**text_args)
 
     axs[1,0].plot(y[:,0],y[:,1],**plot_args)
     axs[1,0].set_xlabel("Y1",**text_args)
