@@ -2,12 +2,9 @@
 
 *Description*: A solver for non-stiff Ordinary Differential Equations of the form
 
-```math
-\begin{align*}
-y' &=f(t,y(t)) \\
-y(0) &= y_0
-\end{align*}
-```
+$$
+\mathbf{y}' = \mathbf{f}(t,\mathbf{y}), \qquad \mathbf{y}(t_0)=\mathbf{y}_0
+$$
 
 Uses a second order Predictor-Corrector method (PECE) with adaptive step sizes for error control, with Adams-Bashforth as the predictor and Adams-Moulton as the corrector.
 
@@ -15,6 +12,6 @@ Uses a second order Predictor-Corrector method (PECE) with adaptive step sizes f
 
 Run the examples with:
 
-```python
+```bash
 python main.py
 ```
