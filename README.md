@@ -10,6 +10,13 @@ Uses a second order Predictor-Corrector method (PECE) with adaptive step sizes f
 
 ---
 
+Install the required packages in a virtual environment with:
+
+```bash
+uv venv /path/to/venv --python 3.14 && source /path/to/venv/bin/activate
+uv pip install -r requirements.txt
+```
+
 Run the examples with:
 
 ```bash
